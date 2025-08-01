@@ -1,0 +1,42 @@
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# VSCode or IDE specific
+.vscode/
+.idea/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Git metadata folder (just in case)
+.git/
+
+# PDF outputs or converted files
+pdfs/
+Documents/
+
+# ChromaDB vector store (if regenerated)
+chroma_db_data/
+
+# Logs
+*.log
+
+# Temp files
+*.tmp
+*.bak
+*.swp
+
+# Streamlit cache
+.streamlit/
+
+# Jupyter checkpoints (if you ever use notebooks)
+.ipynb_checkpoints/
