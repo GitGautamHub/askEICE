@@ -29,6 +29,7 @@ chroma_db_data/
 
 # Logs
 *.log
+.env
 
 # Temp files
 *.tmp

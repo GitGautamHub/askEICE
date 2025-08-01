@@ -190,7 +190,7 @@ def get_rag_chain(vectorstore):
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.0-flash",
         temperature=0.1,
-        google_api_key="AIzaSyDNBJIqDc7j588sMMirCZXGw73vACm6mNw"
+        google_api_key=os.getenv("GEMINI_API_KEY")
     )
     template = """You are an AI assistant for question-answering tasks.
     Use the following pieces of retrieved context to answer the question.
@@ -231,7 +231,7 @@ if "chroma_dir" not in st.session_state:
 
 
 with st.sidebar:
-    st.markdown("### 📄 Document QA Engine")
+    st.markdown("## askEICE")
     if st.button("New Chat", key="new_chat"):
         if st.session_state.page == "chat" and st.session_state.current_chat_title:
             st.session_state.chat_history_titles.append(st.session_state.current_chat_title)
