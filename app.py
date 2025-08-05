@@ -6,8 +6,12 @@ import time
 import shutil
 import comtypes.client # For Word to PDF conversion
 import tempfile
+from PyPDF2 import PdfReader
+from docx import Document
+from PIL import Image
+from fpdf import FPDF
+import glob
 
-# Import functions and constants from the modularized structure
 from config import (
     UPLOAD_FOLDER, CHROMA_DB_DIRECTORY, poppler_bin_path,
     SUPPORTED_FILE_TYPES, MAX_FILE_SIZE_MB, MAX_FILES, MAX_PAGES

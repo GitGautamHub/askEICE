@@ -7,6 +7,7 @@ import comtypes.client
 from PyPDF2 import PdfReader
 from docx import Document
 from PIL import Image
+import fitz
 
 from config import SUPPORTED_FILE_TYPES, MAX_FILE_SIZE_MB, MAX_PAGES, UPLOAD_FOLDER
 
@@ -48,6 +49,31 @@ def is_valid_file(file):
     except Exception as e:
         return False, f"Unhandled validation error: {str(e)}"
 
+def is_scanned_pdf(filepath):
+    try:
+        doc = fitz.open(filepath)
+        for page in doc:
+            if page.get_text():
+                doc.close()
+                return False # Not a scanned PDF
+        doc.close()
+        return True
+    except Exception:
+        return True 
+
+
+def copy_file(source_path, destination_path):
+    """
+    Copies a file from source_path to destination_path.
+    """
+    try:
+        with open(source_path, 'rb') as src_file:
+            with open(destination_path, 'wb') as dest_file:
+                dest_file.write(src_file.read())
+        return True, "File copied successfully."
+    except Exception as e:
+        return False, f"File copy failed: {e}"
+
 def convert_to_pdf(uploaded_file_obj, ext, save_path):
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     pdf_file_path = os.path.splitext(save_path)[0] + ".pdf"
@@ -63,15 +89,45 @@ def convert_to_pdf(uploaded_file_obj, ext, save_path):
         if ext in [".jpg", ".png", ".jpeg"]:
             image = Image.open(pdf_file_path).convert("RGB")
             image.save(pdf_file_path, "PDF", resolution=100.0)
-        elif ext in [".doc", ".docx"]:
-            word = comtypes.client.CreateObject('Word.Application')
-            doc = word.Documents.Open(pdf_file_path)
-            doc.SaveAs(pdf_file_path, FileFormat=17)
-            doc.Close()
-            word.Quit()
+        elif ext.lower() in [".doc", ".docx"]:
+            try:
+                import pythoncom
+                pythoncom.CoInitialize()  # 🔥 REQUIRED!
+
+                import comtypes.client
+                word = comtypes.client.CreateObject('Word.Application')
+                word.Visible = False
+                word.DisplayAlerts = False
+
+                original_ext_path = os.path.abspath(original_ext_path)
+                pdf_file_path = os.path.abspath(pdf_file_path)
+
+                doc = word.Documents.Open(original_ext_path)
+                doc.SaveAs(pdf_file_path, FileFormat=17)  # 17 = PDF
+                doc.Close(False)
+                word.Quit()
+
+                pythoncom.CoUninitialize()
+
+            except Exception as e:
+                try:
+                    word.Quit()
+                except:
+                    pass
+                pythoncom.CoUninitialize()
+                return False, f"Word to PDF conversion failed: {str(e)}"
+
+        elif ext.lower() == ".pdf":
+            copy_file(original_ext_path, pdf_file_path)
+
+
+        else:
+            # Unsupported extension
+            return False, f"Unsupported file type: {ext}"
+
         return True, pdf_file_path
 
     except Exception as e:
         if os.path.exists(pdf_file_path):
             os.remove(pdf_file_path)
-        return False, f"File conversion failed: {e}"
+        return False, f"File conversion failed: {str(e)}"
