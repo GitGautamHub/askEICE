@@ -9,7 +9,7 @@ __pycache__/
 *.py[cod]
 *.pyo
 
-# VSCode or IDE specific
+# IDE specific
 .vscode/
 .idea/
 
@@ -20,24 +20,31 @@ Thumbs.db
 # Git metadata folder (just in case)
 .git/
 
-# PDF outputs or converted files
-pdfs/
+# User-uploaded documents and converted files
 Documents/
+pdfs/
 
-# ChromaDB vector store (if regenerated)
-chroma_db_data/
-
-# Logs
-*.log
-.env
-
-# Temp files
+# Temporary files created during runtime
 *.tmp
 *.bak
 *.swp
 
-# Streamlit cache
+# Streamlit cache and state files
 .streamlit/
+*.pkl
+*.bin
 
-# Jupyter checkpoints (if you ever use notebooks)
-.ipynb_checkpoints/
+# Log files
+*.log
+
+# ChromaDB vector store data
+chroma_db_data/
+
+# HuggingFace model cache (large files)
+.cache/
+huggingface/
+
+# Generated output files
+extracted_text_doctr.txt
+combined_extracted_text.txt
+llm_interactions.txt
