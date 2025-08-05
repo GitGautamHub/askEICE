@@ -130,11 +130,9 @@ if st.session_state.page == "upload":
                 st.write("All files approved.")
 
             if st.session_state.approved_files:
-                use_ocr = st.checkbox("Enable OCR (for images and scanned docs)", value=False)
-
+                # No checkbox needed, the system will decide.
                 if st.button("Start Processing", key="start_processing"):
                     st.session_state.page = "processing"
-                    st.session_state.use_ocr_choice = use_ocr
                     st.rerun()
 
 elif st.session_state.page == "processing":
@@ -146,7 +144,8 @@ elif st.session_state.page == "processing":
             try:
                 status_container.update(label="Extracting text from documents...")
                 pdf_paths_to_process = [f['PDF Path'] for f in st.session_state.approved_files]
-                combined_extracted_text = get_extracted_text(pdf_paths_to_process, use_ocr=st.session_state.use_ocr_choice)
+                # combined_extracted_text = get_extracted_text(pdf_paths_to_process, use_ocr=st.session_state.use_ocr_choice)
+                combined_extracted_text = get_extracted_text(pdf_paths_to_process)
                 if not combined_extracted_text.strip():
                     raise ValueError("No text was extracted from the PDFs. Please check the files.")
                 status_container.update(label="Text Extraction Complete!", state="complete")

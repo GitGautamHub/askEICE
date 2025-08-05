@@ -52,11 +52,17 @@ def is_valid_file(file):
 def is_scanned_pdf(filepath):
     try:
         doc = fitz.open(filepath)
+        i=0;
+        j=0;
         for page in doc:
+            i=i+1
             if page.get_text():
                 doc.close()
+                print(f"This is not a scanned PDF.{i}")
                 return False # Not a scanned PDF
         doc.close()
+        j=j+1
+        print(f"This is a scanned PDF.{j}")
         return True
     except Exception:
         return True 
