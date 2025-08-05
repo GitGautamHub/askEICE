@@ -143,13 +143,16 @@ elif st.session_state.page == "processing":
         with st.status("Initializing...", expanded=True) as status_container:
             try:
                 status_container.update(label="Extracting text from documents...")
+                print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
                 pdf_paths_to_process = [f['PDF Path'] for f in st.session_state.approved_files]
                 # combined_extracted_text = get_extracted_text(pdf_paths_to_process, use_ocr=st.session_state.use_ocr_choice)
                 combined_extracted_text = get_extracted_text(pdf_paths_to_process)
                 if not combined_extracted_text.strip():
                     raise ValueError("No text was extracted from the PDFs. Please check the files.")
                 status_container.update(label="Text Extraction Complete!", state="complete")
+                print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
                 
+
                 status_container.update(label="Building RAG pipeline...")
                 rag_chain, chroma_dir = setup_rag_pipeline(combined_extracted_text)
                 st.session_state['rag_chain'] = rag_chain
@@ -157,6 +160,7 @@ elif st.session_state.page == "processing":
                 status_container.update(label="RAG Pipeline Built!", state="complete")
                 
                 st.success("Processing complete!")
+                print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
                 
                 st.session_state.page = "chat"
                 st.session_state.current_chat_title = f"Chat ({time.strftime('%Y-%m-%d %H:%M')})"

@@ -11,9 +11,33 @@ from doctr.models import ocr_predictor
 from utils.file_processing import is_scanned_pdf
 from config import poppler_bin_path
 import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+from spellchecker import SpellChecker
 
 global_doctr_model = None
 import fitz 
+
+
+def is_text_quality_good(text):
+    """
+    Checks if the extracted text has a good linguistic quality using a spell checker.
+    Returns True if the text is likely to be valid, False otherwise.
+    """
+    if not text or len(text.strip()) < 100: # Heuristic: if text is too short, it might be junk
+        return False
+
+    spell = SpellChecker()
+    words = text.split()
+    misspelled = spell.unknown(words)
+    
+    # Heuristic: if more than 20% of words are unknown, it's likely bad OCR
+    if len(misspelled) / len(words) > 0.20:
+        return False
+
+    return True
 
 
 def is_valid_pdf(filepath):
@@ -26,23 +50,31 @@ def is_valid_pdf(filepath):
 
 def get_extracted_text(pdf_files):
     combined_text = ""
-    # Load DocTR model only if a scanned PDF is found
     global global_doctr_model
     global_doctr_model = None
 
     for i, pdf_file_path in enumerate(pdf_files):
-        if is_scanned_pdf(pdf_file_path):
-            # NEW: Load DocTR model only when needed
+        # Step 1: Try PDF Plumber first (fastest method)
+        pdfplumber_text = extract_text_with_pdfplumber(pdf_file_path)
+
+        # Step 2: Check the quality of the extracted text
+        if pdfplumber_text and is_text_quality_good(pdfplumber_text):
+            # Case 1: PDF Plumber found good quality text
+            logging.info(f"Processing PDF {i+1}/{len(pdf_files)} with PDF Plumber (✓ Quality Check): '{os.path.basename(pdf_file_path)}'")
+            # print(f"Processing PDF {i+1}/{len(pdf_files)} with PDF Plumber (✓ Quality Check): '{os.path.basename(pdf_file_path)}'")
+            combined_text += pdfplumber_text
+        else:
+            # Case 2: PDF Plumber found no text or poor quality text. Fallback to OCR.
+            logging.info(f"Processing PDF {i+1}/{len(pdf_files)} with OCR (✗ Quality Check): '{os.path.basename(pdf_file_path)}'")
+            
+            # Load DocTR model only when needed
             if not global_doctr_model:
                 device = "cuda" if torch.cuda.is_available() else "cpu"
                 logging.info(f"Using {device} for DocTR.")
                 global_doctr_model = ocr_predictor(det_arch='db_resnet50', reco_arch='crnn_vgg16_bn', pretrained=True).to(device)
             
-            logging.info(f"Processing PDF {i+1}/{len(pdf_files)} with OCR: '{os.path.basename(pdf_file_path)}'")
             combined_text += extract_text_from_pdf_with_doctr(pdf_file_path)
-        else:
-            logging.info(f"Processing PDF {i+1}/{len(pdf_files)} with pdfplumber: '{os.path.basename(pdf_file_path)}'")
-            combined_text += extract_text_with_pdfplumber(pdf_file_path)
+
     return combined_text
 
 def extract_text_with_pdfplumber(pdf_path):
@@ -52,9 +84,6 @@ def extract_text_with_pdfplumber(pdf_path):
 
     try:
         print(f"🔍 Extracting text from PDF: {os.path.basename(pdf_path)}")
-        if not is_valid_pdf(pdf_path):
-            print(f"❌ Skipping invalid PDF file: {os.path.basename(pdf_path)} (Not a real PDF)")
-            return ""
         with pdfplumber.open(pdf_path) as pdf:
             total_pages = len(pdf.pages)
             print(f"📄 Total pages: {total_pages}")
@@ -63,7 +92,7 @@ def extract_text_with_pdfplumber(pdf_path):
                 page_text = page.extract_text()
                 
                 if page_text and page_text.strip():
-                    extracted_text += f"\n--- PDF: {os.path.basename(pdf_path)} | Page: {page_idx + 1} ---\n"
+                    # extracted_text += f"\n--- PDF: {os.path.basename(pdf_path)} | Page: {page_idx + 1} ---\n"
                     extracted_text += page_text.strip() + "\n"
                 else:
                     print(f"⚠️ Blank or unreadable page: {page_idx + 1}")
@@ -108,7 +137,7 @@ def extract_text_from_pdf_with_doctr(pdf_path):
         print(f"  DocTR OCR processing for '{os.path.basename(pdf_path)}' completed in {ocr_end_time - ocr_start_time:.2f} seconds.")
 
         for page_idx, page in enumerate(result.pages):
-            extracted_pdf_text += f"\n--- PDF: {os.path.basename(pdf_path)} | Page: {page_idx + 1} ---\n"
+            # extracted_pdf_text += f"\n--- PDF: {os.path.basename(pdf_path)} | Page: {page_idx + 1} ---\n"
             for block in page.blocks:
                 for line in block.lines:
                     line_text = " ".join([word.value for word in line.words])
