@@ -1,0 +1,25 @@
+{
+  "created_at": "2025-08-07T12:42:04.479968",
+  "updated_at": "2025-08-07T12:43:21.077194",
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Hey! How can I help you today? Feel free to ask me anything."
+    },
+    {
+      "role": "user",
+      "content": "what is this document is all abbout"
+    },
+    {
+      "role": "assistant",
+      "content": "The document is about data quality measures on HDX, including recommendations and designs for a framework for organization trust levels, assessing metadata completeness, and assessing fitness for purpose. It also discusses the addition of domain-specific metadata, third-party certification metrics, and the ability to compare and see additional, related datasets."
+    }
+  ],
+  "approved_files": [
+    {
+      "File Name": "pdf-10-32.pdf",
+      "PDF Path": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\Documents\\akshat@gmail.com\\pdf-10-32.pdf"
+    }
+  ],
+  "user": "akshat@gmail.com"
+}

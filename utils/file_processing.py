@@ -10,6 +10,7 @@ from PIL import Image
 import fitz
 import platform
 import subprocess
+from pathlib import Path
 
 from config import SUPPORTED_FILE_TYPES, MAX_FILE_SIZE_MB, MAX_PAGES, UPLOAD_FOLDER
 
@@ -54,20 +55,14 @@ def is_valid_file(file):
 def is_scanned_pdf(filepath):
     try:
         doc = fitz.open(filepath)
-        i=0;
-        j=0;
         for page in doc:
-            i=i+1
             if page.get_text():
                 doc.close()
-                print(f"This is not a scanned PDF.{i}")
-                return False # Not a scanned PDF
+                return False
         doc.close()
-        j=j+1
-        print(f"This is a scanned PDF.{j}")
         return True
     except Exception:
-        return True 
+        return True
 
 
 def copy_file(source_path, destination_path):
@@ -82,47 +77,45 @@ def copy_file(source_path, destination_path):
     except Exception as e:
         return False, f"File copy failed: {e}"
 
-def convert_to_pdf(uploaded_file_obj, ext, save_path):
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    base_path = os.path.splitext(save_path)[0]
-    pdf_file_path = base_path + ".pdf"
-
+def convert_to_pdf(uploaded_file_obj, ext, user_upload_dir):
+    os.makedirs(user_upload_dir, exist_ok=True)
+    
+    save_path = os.path.join(user_upload_dir, uploaded_file_obj.name)
+    pdf_file_path = os.path.splitext(save_path)[0] + ".pdf"
+    
     if os.path.exists(pdf_file_path):
         os.remove(pdf_file_path)
 
     try:
-        # Save uploaded file temporarily
         with open(save_path, "wb") as f:
             f.write(uploaded_file_obj.read())
 
         ext = ext.lower()
 
-        # Convert images to PDF using PIL (cross-platform)
         if ext in [".jpg", ".jpeg", ".png"]:
             image = Image.open(save_path).convert("RGB")
             image.save(pdf_file_path, "PDF", resolution=100.0)
             return True, pdf_file_path
-
-        # If already PDF
         if ext == ".pdf":
             return True, save_path
 
-        # Word Docs (.doc/.docx)
         if ext in [".doc", ".docx"]:
             current_platform = platform.system()
-
             if current_platform == "Windows":
-                # --- Windows logic using comtypes ---
                 try:
                     import pythoncom
-                    import comtypes.client
-
                     pythoncom.CoInitialize()
+
                     word = comtypes.client.CreateObject("Word.Application")
                     word.Visible = False
-                    doc = word.Documents.Open(save_path)
-                    doc.SaveAs(pdf_file_path, FileFormat=17)  # 17 = PDF
-                    doc.Close()
+                    word.DisplayAlerts = False
+
+                    abs_save_path = os.path.abspath(save_path)
+                    abs_pdf_file_path = os.path.abspath(pdf_file_path)
+
+                    doc = word.Documents.Open(abs_save_path)
+                    doc.SaveAs(abs_pdf_file_path, FileFormat=17)
+                    doc.Close(False)
                     word.Quit()
                     pythoncom.CoUninitialize()
                     return True, pdf_file_path
@@ -133,12 +126,10 @@ def convert_to_pdf(uploaded_file_obj, ext, save_path):
                         pythoncom.CoUninitialize()
                     except:
                         pass
-                    return False, f"[Windows] Word to PDF failed: {str(e)}"
-
+                    return False, f"[Windows] Word to PDF failed: {str(e)}. Ensure MS Word is installed."
             else:
-                # --- Linux/macOS logic using libreoffice ---
                 try:
-                    output_dir = os.path.dirname(save_path)
+                    output_dir = os.path.dirname(pdf_file_path)
                     command = [
                         "libreoffice",
                         "--headless",
@@ -146,17 +137,23 @@ def convert_to_pdf(uploaded_file_obj, ext, save_path):
                         "--outdir", output_dir,
                         save_path
                     ]
-                    subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    converted_pdf_path = str(Path(save_path).with_suffix(".pdf"))
-                    return True, converted_pdf_path
-
+                    result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    if os.path.exists(pdf_file_path):
+                        return True, pdf_file_path
+                    else:
+                        return False, f"[Linux/macOS] LibreOffice conversion failed: Output PDF not found. Stderr: {result.stderr.decode()}"
+                except FileNotFoundError:
+                    return False, "[Linux/macOS] LibreOffice not found."
                 except subprocess.CalledProcessError as e:
-                    return False, f"[Linux/macOS] LibreOffice conversion failed: {e.stderr.decode()}"
-
-        # Unsupported
-        return False, f"Unsupported file type: {ext}"
+                    return False, f"[Linux/macOS] LibreOffice conversion failed with error: {e.stderr.decode()}"
+                except Exception as e:
+                    return False, f"[Linux/macOS] Word to PDF failed: {str(e)}"
+        
+        return False, f"Unsupported file type for conversion: {ext}"
 
     except Exception as e:
+        if os.path.exists(save_path):
+            os.remove(save_path)
         if os.path.exists(pdf_file_path):
             os.remove(pdf_file_path)
-        return False, f"File conversion failed: {str(e)}"
+        return False, f"File processing failed: {str(e)}"

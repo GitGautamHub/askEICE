@@ -1,28 +1,15 @@
 # app.py
-
 import streamlit as st
-import os
-import time
-import shutil
-import comtypes.client # For Word to PDF conversion
-import tempfile
-from PyPDF2 import PdfReader
-from docx import Document
-from PIL import Image
-from fpdf import FPDF
-import glob
-
-from config import (
-    UPLOAD_FOLDER, CHROMA_DB_DIRECTORY, poppler_bin_path,
-    SUPPORTED_FILE_TYPES, MAX_FILE_SIZE_MB, MAX_FILES, MAX_PAGES
-)
-from utils.file_processing import (
-    get_file_extension, is_valid_file, convert_to_pdf
-)
-from utils.extraction import get_extracted_text
-from utils.rag_pipeline import setup_rag_pipeline
+from utils.auth import init_db, logout_user, load_user_chats, create_new_chat
+from upload_process_page import render_upload_page, render_processing_page
+from chat_page import render_chat_page
+from auth_flow import render_auth_flow
+import bcrypt
+from utils.auth import load_chat, get_user_info
 
 # --- Session state initialization ---
+if "user" not in st.session_state:
+    st.session_state.page = "login"
 if "page" not in st.session_state:
     st.session_state.page = "upload"
     st.session_state.messages = [{"role": "assistant", "content": "Welcome to AskEice! Upload your files to get started."}]
@@ -30,177 +17,72 @@ if "approved_files" not in st.session_state:
     st.session_state.approved_files = []
 if "rag_chain" not in st.session_state:
     st.session_state.rag_chain = None
-if "chat_history_titles" not in st.session_state:
-    st.session_state.chat_history_titles = []
-if "current_chat_title" not in st.session_state:
-    st.session_state.current_chat_title = None
+if "current_chat_file" not in st.session_state:
+    st.session_state.current_chat_file = None
 if "chroma_dir" not in st.session_state:
     st.session_state.chroma_dir = None
+if "current_chat_title" not in st.session_state:
+    st.session_state.current_chat_title = None
 
+st.set_page_config(page_title="AskEice - Document QA", layout="wide")
 
-# --- Streamlit UI and Logic ---
-st.set_page_config(page_title="askEice - Document QA", layout="wide")
-
+# --- Authentication Flow ---
+if st.session_state.page == "login":
+    init_db()
+    render_auth_flow()
+    st.stop()
+    
+# --- Main App Sidebar & Routing ---
 with st.sidebar:
     st.markdown("### askEICE")
-    if st.button("New Chat", key="new_chat"):
-        if st.session_state.page == "chat" and st.session_state.current_chat_title:
-            st.session_state.chat_history_titles.append(st.session_state.current_chat_title)
+    
+    if "user" in st.session_state:
+        first_name, email = get_user_info(st.session_state['user'])
         
-        st.session_state.page = "upload"
-        st.session_state.messages.clear()
-        st.session_state.approved_files.clear()
-        st.session_state.rag_chain = None
-        st.session_state.current_chat_title = None
-        
-        if os.path.exists(UPLOAD_FOLDER):
-            shutil.rmtree(UPLOAD_FOLDER)
-            os.makedirs(UPLOAD_FOLDER)
-        if st.session_state.chroma_dir and os.path.exists(st.session_state.chroma_dir):
-            shutil.rmtree(st.session_state.chroma_dir)
+        if first_name:
+            st.sidebar.success(f"Logged in as: **{first_name}**\n\n{email}") # <-- ye line change karo
+        else:
+            st.sidebar.success(f"Logged in as: {email}") # Fallback if name is not found
+            
+        if st.sidebar.button(" 🚪 Logout", use_container_width=True):
+            logout_user()
+            st.rerun()
+
+    st.markdown("---")
+    if st.button("✨ New Chat", use_container_width=True):
+        create_new_chat()
         st.rerun()
 
-    if st.session_state.chat_history_titles:
+    # Previous chat history section with visual improvements
+    if st.session_state.get("user"):
         st.markdown("---")
         st.markdown("#### ⏳ Previous Chats")
-        for title in st.session_state.chat_history_titles:
-            st.markdown(f"- {title}")
-
+        user_chats = load_user_chats(st.session_state["user"])
+        if user_chats:
+            for chat in user_chats:
+                button_label = f" {chat['title']}"
+                if len(button_label) > 40:
+                    button_label = button_label[:37] + "..."
+                
+                # Use a single, styled button for each chat
+                button_type = "primary" if st.session_state.get('current_chat_file') == chat['path'] else "secondary"
+                if st.button(button_label, key=chat['path'], use_container_width=True, type=button_type):
+                    load_chat(chat['path'])
+                    st.rerun()
+        else:
+            st.info("No previous chats found.")
+            
     if st.session_state.approved_files:
         st.markdown("---")
-        st.markdown("#### ✅ Uploaded Documents")
+        st.markdown("#### 📄 Uploaded Documents")
         for file_info in st.session_state.approved_files:
-            st.write(file_info['File Name'])
-    
+            st.write(f"- {file_info['File Name']}")
+
+
+# --- Main Page Content based on session state ---
 if st.session_state.page == "upload":
-    st.title("Upload Files")
-    st.markdown("Please upload documents (PDF, DOCX, JPG, PNG) to create a knowledge base.")
-
-    uploaded_files = st.file_uploader(
-        label="Upload files",
-        type=[f.strip('.') for f in SUPPORTED_FILE_TYPES],
-        accept_multiple_files=True,
-        help=f"Supported file types: {', '.join(SUPPORTED_FILE_TYPES)}\n"
-             f"Upload limit: Up to {MAX_FILES} files at a time\n"
-             f"File size limit: {MAX_FILE_SIZE_MB} MB per file\n"
-             f"Document length limit: Maximum {MAX_PAGES} pages per document",
-    )
-
-    if uploaded_files:
-        if len(uploaded_files) > MAX_FILES:
-            st.error(f"You can upload up to {MAX_FILES} files at a time.")
-        else:
-            approved_files = []
-            rejected_files = []
-
-            for file in uploaded_files:
-                ext = get_file_extension(file)
-                valid, msg = is_valid_file(file)
-
-                if valid:
-                    file.seek(0)
-                    save_path = os.path.join(UPLOAD_FOLDER, file.name)
-
-                    if ext.lower() == ".pdf":
-                        # Already a PDF, just save it
-                        with open(save_path, "wb") as f:
-                            f.write(file.read())
-                        approved_files.append({"File Name": file.name, "PDF Path": save_path})
-                    else:
-                        success, result = convert_to_pdf(file, ext, save_path)
-                        if success:
-                            approved_files.append({"File Name": file.name, "PDF Path": result})
-                        else:
-                            rejected_files.append({"File Name": file.name, "Reason": result})
-                else:
-                    rejected_files.append({"File Name": file.name, "Reason": msg})
-
-            st.session_state.approved_files = approved_files
-
-            st.markdown("### ✅ Approved Files")
-            if approved_files:
-                st.table(approved_files)
-            else:
-                st.write("No files approved.")
-
-            st.markdown("### ❌ Not Approved Files")
-            if rejected_files:
-                st.table(rejected_files)
-            else:
-                st.write("All files approved.")
-
-            if st.session_state.approved_files:
-                # No checkbox needed, the system will decide.
-                if st.button("Start Processing", key="start_processing"):
-                    st.session_state.page = "processing"
-                    st.rerun()
-
+    render_upload_page()
 elif st.session_state.page == "processing":
-    st.title("Processing Documents...")
-    st.info("Please wait while your documents are being processed.")
-    
-    if st.session_state.approved_files:
-        with st.status("Initializing...", expanded=True) as status_container:
-            try:
-                status_container.update(label="Extracting text from documents...")
-                print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-                pdf_paths_to_process = [f['PDF Path'] for f in st.session_state.approved_files]
-                # combined_extracted_text = get_extracted_text(pdf_paths_to_process, use_ocr=st.session_state.use_ocr_choice)
-                combined_extracted_text = get_extracted_text(pdf_paths_to_process)
-                if not combined_extracted_text.strip():
-                    raise ValueError("No text was extracted from the PDFs. Please check the files.")
-                status_container.update(label="Text Extraction Complete!", state="complete")
-                print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-                
-
-                status_container.update(label="Building RAG pipeline...")
-                rag_chain, chroma_dir = setup_rag_pipeline(combined_extracted_text)
-                st.session_state['rag_chain'] = rag_chain
-                st.session_state.chroma_dir = chroma_dir
-                status_container.update(label="RAG Pipeline Built!", state="complete")
-                
-                st.success("Processing complete!")
-                print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-                
-                st.session_state.page = "chat"
-                st.session_state.current_chat_title = f"Chat ({time.strftime('%Y-%m-%d %H:%M')})"
-                st.session_state.messages = [{"role": "assistant", "content": "Hey! How can I help you today? Feel free to ask me anything."}]
-                st.rerun()
-
-            except Exception as e:
-                st.error(f"An error occurred during processing: {e}")
-                st.exception(e)
-                st.stop()
-    else:
-        st.warning("No files were approved for processing. Please go back to upload files.")
-        st.session_state.page = "upload"
-        st.rerun()
-
-# Chat Page
+    render_processing_page()
 elif st.session_state.page == "chat":
-    st.title(st.session_state.get('current_chat_title', 'Ask Anything'))
-    
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-    user_prompt = st.chat_input("Ask me anything...")
-    if user_prompt:
-        st.session_state.messages.append({"role": "user", "content": user_prompt})
-        with st.chat_message("user"):
-            st.markdown(user_prompt)
-
-        with st.chat_message("assistant"):
-            if st.session_state.rag_chain:
-                try:
-                    with st.spinner("Thinking..."):
-                        response = st.session_state.rag_chain.invoke(user_prompt)
-                    st.markdown(response)
-                    st.session_state.messages.append({"role": "assistant", "content": response})
-                except Exception as e:
-                    st.error(f"An error occurred during interaction: {e}")
-                    st.session_state.messages.append({"role": "assistant", "content": f"An error occurred: {e}"})
-            else:
-                st.warning("The RAG pipeline is not ready. Please go back and process documents.")
-                st.session_state.page = "upload"
-                st.rerun()
+    render_chat_page()

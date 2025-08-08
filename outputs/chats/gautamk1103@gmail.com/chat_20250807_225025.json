@@ -1,0 +1,14 @@
+{
+  "title": "Chat (2025-08-07 22:50)",
+  "created_at": "2025-08-07T22:50:35.176937",
+  "updated_at": "2025-08-07T22:50:35.176937",
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Hey! How can I help you today? Feel free to ask me anything."
+    }
+  ],
+  "approved_files": [],
+  "user": "gautamk1103@gmail.com",
+  "chroma_dir": null
+}

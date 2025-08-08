@@ -1,0 +1,82 @@
+{
+  "created_at": "2025-08-07T14:58:59.710340",
+  "updated_at": "2025-08-07T15:03:42.621334",
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Hey! How can I help you today? Feel free to ask me anything."
+    },
+    {
+      "role": "user",
+      "content": "what is the impact on existinng data processes and system"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm sorry, but the provided documents do not contain information about the impact on existing data processes and systems."
+    },
+    {
+      "role": "user",
+      "content": "what is the impact on existing data processes"
+    },
+    {
+      "role": "assistant",
+      "content": "The information is not available in the document."
+    },
+    {
+      "role": "user",
+      "content": "who is Matt Tyalor"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm sorry, but this document does not contain the answer to this question."
+    },
+    {
+      "role": "user",
+      "content": "who is Matt Taylor"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm sorry, but I cannot answer who Matt Taylor is based on the context provided."
+    },
+    {
+      "role": "user",
+      "content": "what is its background"
+    },
+    {
+      "role": "assistant",
+      "content": "The information is not available in the document."
+    },
+    {
+      "role": "user",
+      "content": "what is background"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm sorry, but the context provided does not contain the answer to your question."
+    },
+    {
+      "role": "user",
+      "content": "tell me about the data nutrition project"
+    },
+    {
+      "role": "assistant",
+      "content": "The Data Nutrition Project is a non-profit initiative that formed in 2018 to develop tools and practices to improve transparency into datasets. Their team is interdisciplinary and leverages insights from a variety of fields, including product development, data science, ethics, engineering, design, and education."
+    },
+    {
+      "role": "user",
+      "content": "tell me the challenge 2"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm sorry, but the information about challenge 2 is not available in the document."
+    }
+  ],
+  "approved_files": [
+    {
+      "File Name": "pdf-10-32.pdf",
+      "PDF Path": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\Documents\\anubhav2@gmail.com\\pdf-10-32.pdf"
+    }
+  ],
+  "user": "anubhav2@gmail.com",
+  "chroma_dir": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\chroma_db_data\\anubhav2@gmail.com\\9e18588d-4c0a-480b-b0c4-9cd6a5b99fea"
+}

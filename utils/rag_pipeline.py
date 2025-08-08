@@ -26,6 +26,8 @@ def get_rag_chain(vectorstore):
     If you don't know the answer, just say that you don't know.
     If the context provided is empty, state that the information is not available in the document.
 
+    Chat History:
+    {chat_history}
     Context:
     {context}
     Question: {question}
@@ -33,7 +35,7 @@ def get_rag_chain(vectorstore):
     """
     custom_rag_prompt = PromptTemplate.from_template(template)
     rag_chain = (
-        {"context": vectorstore.as_retriever(), "question": RunnablePassthrough()}
+        {"context": vectorstore.as_retriever(), "question": RunnablePassthrough(), "chat_history": RunnablePassthrough()}
         | custom_rag_prompt
         | llm
         | StrOutputParser()
@@ -41,19 +43,18 @@ def get_rag_chain(vectorstore):
     return rag_chain
 
 
-def setup_rag_pipeline(combined_extracted_text):
+def setup_rag_pipeline(combined_extracted_text, username):
     logging.info("Building RAG pipeline...")
     embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
     
-    # Use a new unique directory for each session to avoid file locks
-    chroma_dir = os.path.join(CHROMA_DB_DIRECTORY, str(uuid.uuid4()))
+    user_chroma_dir = os.path.join(CHROMA_DB_DIRECTORY, username, str(uuid.uuid4()))
     
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     texts = text_splitter.create_documents([combined_extracted_text])
     
-    vectorstore = Chroma.from_documents(texts, embeddings_model, persist_directory=chroma_dir)
-    logging.info(f"ChromaDB created and persisted to '{chroma_dir}'.")
+    vectorstore = Chroma.from_documents(texts, embeddings_model, persist_directory=user_chroma_dir)
+    logging.info(f"ChromaDB created and persisted to '{user_chroma_dir}'.")
     
     rag_chain = get_rag_chain(vectorstore)
     
-    return rag_chain, chroma_dir
+    return rag_chain, user_chroma_dir

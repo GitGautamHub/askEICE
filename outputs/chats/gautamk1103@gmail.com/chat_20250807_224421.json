@@ -1,0 +1,27 @@
+{
+  "title": "Chat 20250807_224421",
+  "created_at": "2025-08-07T22:45:43.823494",
+  "updated_at": "2025-08-08T10:51:33.297304",
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Hey! How can I help you today? Feel free to ask me anything."
+    },
+    {
+      "role": "user",
+      "content": "what is this document about"
+    },
+    {
+      "role": "assistant",
+      "content": "The document is about anticipatory action in Ethiopia to mitigate the impact of droughts on vulnerable households. It discusses how early warning systems and humanitarian efforts helped to provide resources and assistance to communities affected by drought, including access to clean water, food, and livestock support. The document also highlights the importance of food security assessments and the success of anticipatory action in improving the quality of life for recipients."
+    }
+  ],
+  "approved_files": [
+    {
+      "File Name": "pdf-8.pdf",
+      "PDF Path": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\Documents\\gautamk1103@gmail.com\\pdf-8.pdf"
+    }
+  ],
+  "user": "gautamk1103@gmail.com",
+  "chroma_dir": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\chroma_db_data\\gautamk1103@gmail.com\\a9ec2966-b7f9-47bb-858d-6a80909aecca"
+}

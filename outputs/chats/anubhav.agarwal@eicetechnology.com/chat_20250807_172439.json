@@ -1,0 +1,42 @@
+{
+  "created_at": "2025-08-07T17:24:39.101986",
+  "updated_at": "2025-08-07T17:26:00.559344",
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Hey! How can I help you today? Feel free to ask me anything."
+    },
+    {
+      "role": "user",
+      "content": "Tell me the name "
+    },
+    {
+      "role": "assistant",
+      "content": "The name is Mahaveer Prasad Jain."
+    },
+    {
+      "role": "user",
+      "content": "Where does he live"
+    },
+    {
+      "role": "assistant",
+      "content": "He lives in mahajan mohalla, govind bhavan ke paas, Deoli, Tonk, Deoli, Rajasthan, 304804."
+    },
+    {
+      "role": "user",
+      "content": "Any more specific information about him"
+    },
+    {
+      "role": "assistant",
+      "content": "The document provides the following information about the individual:\n\n*   **Name:** Not explicitly stated, but likely related to \"Mahaveer Prasad Jain\" and/or the address \"govind bhavan\".\n*   **Son of:** Mahaveer Prasad Jain\n*   **Address:** mahajan mohalla, govind bhavan ke paas, Deoli, Tonk, Deoli, Rajasthan, 304804\n*   **Unique Identification (UIDAI) number:** 6881 9144 6218"
+    }
+  ],
+  "approved_files": [
+    {
+      "File Name": "addhar.pdf",
+      "PDF Path": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\Documents\\anubhav.agarwal@eicetechnology.com\\addhar.pdf"
+    }
+  ],
+  "user": "anubhav.agarwal@eicetechnology.com",
+  "chroma_dir": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\chroma_db_data\\anubhav.agarwal@eicetechnology.com\\7d2615b0-4159-47dd-8f69-e0b039fd9c56"
+}

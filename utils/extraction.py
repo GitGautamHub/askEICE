@@ -33,8 +33,8 @@ def is_text_quality_good(text):
     words = text.split()
     misspelled = spell.unknown(words)
     
-    # Heuristic: if more than 20% of words are unknown, it's likely bad OCR
-    if len(misspelled) / len(words) > 0.20:
+    # Heuristic: if more than 15% of words are unknown, it's likely bad OCR
+    if len(misspelled) / len(words) > 0.15:
         return False
 
     return True
@@ -48,26 +48,20 @@ def is_valid_pdf(filepath):
         return False
     
 
-def get_extracted_text(pdf_files):
+def get_extracted_text(pdf_files, username):
     combined_text = ""
     global global_doctr_model
     global_doctr_model = None
 
     for i, pdf_file_path in enumerate(pdf_files):
-        # Step 1: Try PDF Plumber first (fastest method)
         pdfplumber_text = extract_text_with_pdfplumber(pdf_file_path)
 
-        # Step 2: Check the quality of the extracted text
         if pdfplumber_text and is_text_quality_good(pdfplumber_text):
-            # Case 1: PDF Plumber found good quality text
             logging.info(f"Processing PDF {i+1}/{len(pdf_files)} with PDF Plumber (✓ Quality Check): '{os.path.basename(pdf_file_path)}'")
-            # print(f"Processing PDF {i+1}/{len(pdf_files)} with PDF Plumber (✓ Quality Check): '{os.path.basename(pdf_file_path)}'")
             combined_text += pdfplumber_text
         else:
-            # Case 2: PDF Plumber found no text or poor quality text. Fallback to OCR.
             logging.info(f"Processing PDF {i+1}/{len(pdf_files)} with OCR (✗ Quality Check): '{os.path.basename(pdf_file_path)}'")
             
-            # Load DocTR model only when needed
             if not global_doctr_model:
                 device = "cuda" if torch.cuda.is_available() else "cpu"
                 logging.info(f"Using {device} for DocTR.")

@@ -1,0 +1,35 @@
+{
+  "title": "akshat",
+  "created_at": "2025-08-07T22:45:43.823494",
+  "updated_at": "2025-08-08T10:53:25.751954",
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Hey! How can I help you today? Feel free to ask me anything."
+    },
+    {
+      "role": "user",
+      "content": "what is this document about"
+    },
+    {
+      "role": "assistant",
+      "content": "The document discusses how HDX (Humanitarian Data Exchange) serves as a trusted platform for sharing and utilizing data within the humanitarian community. It highlights how organizations like WHO and World Vision benefit from HDX's commitment to data quality and transparency, using data to address various challenges, such as understanding population density, identifying overlooked communities, and planning for humanitarian action. The document also touches on the importance of metadata and methodology in ensuring data confidence and the role of data in prompting further investigation and informing decision-making."
+    }
+  ],
+  "approved_files": [
+    {
+      "File Name": "pdf-9.pdf",
+      "PDF Path": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\Documents\\gautamk1103@gmail.com\\pdf-9.pdf"
+    },
+    {
+      "File Name": "pdf-8.pdf",
+      "PDF Path": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\Documents\\gautamk1103@gmail.com\\pdf-8.pdf"
+    },
+    {
+      "File Name": "pdf-7.pdf",
+      "PDF Path": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\Documents\\gautamk1103@gmail.com\\pdf-7.pdf"
+    }
+  ],
+  "user": "gautamk1103@gmail.com",
+  "chroma_dir": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\chroma_db_data\\gautamk1103@gmail.com\\4d783d66-a73d-43b2-99ff-f2593996c8e5"
+}

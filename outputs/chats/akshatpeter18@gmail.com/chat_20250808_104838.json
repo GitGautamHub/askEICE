@@ -1,0 +1,27 @@
+{
+  "title": "Chat (2025-08-08 10:49)",
+  "created_at": "2025-08-08T10:48:55.211137",
+  "updated_at": "2025-08-08T10:51:18.625138",
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Hey! How can I help you today? Feel free to ask me anything."
+    },
+    {
+      "role": "user",
+      "content": "tell the aadhar number"
+    },
+    {
+      "role": "assistant",
+      "content": "The Aadhar number is 6881 9144 6218."
+    }
+  ],
+  "approved_files": [
+    {
+      "File Name": "addhar.pdf",
+      "PDF Path": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\Documents\\akshatpeter18@gmail.com\\addhar.pdf"
+    }
+  ],
+  "user": "gautamk1103@gmail.com",
+  "chroma_dir": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\chroma_db_data\\akshatpeter18@gmail.com\\0c18430d-5f35-4838-b30a-c265737ef207"
+}

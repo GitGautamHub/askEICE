@@ -1,0 +1,27 @@
+{
+  "title": "new chat",
+  "created_at": "2025-08-07T22:50:25.921908",
+  "updated_at": "2025-08-08T10:53:32.248556",
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Hey! How can I help you today? Feel free to ask me anything."
+    },
+    {
+      "role": "user",
+      "content": "what is this document about"
+    },
+    {
+      "role": "assistant",
+      "content": "The document is about HDX (Humanitarian Data Exchange), a platform that connects people and organizations in the humanitarian community to various data sources. It highlights how HDX helps humanitarians use data to address challenges, with examples from WHO and World Vision. The platform provides access to data, ensures data quality and transparency, and facilitates exploratory analysis."
+    }
+  ],
+  "approved_files": [
+    {
+      "File Name": "pdf-7.pdf",
+      "PDF Path": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\Documents\\gautamk1103@gmail.com\\pdf-7.pdf"
+    }
+  ],
+  "user": "gautamk1103@gmail.com",
+  "chroma_dir": "C:\\Users\\Gautam kumar\\Downloads\\askEICE\\chroma_db_data\\gautamk1103@gmail.com\\7badc3e5-a667-4a68-88dd-85a420054880"
+}
