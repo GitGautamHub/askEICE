@@ -4,6 +4,7 @@ venv/
 ENV/
 env/
 old_code/
+outputs/
 
 # Python bytecode
 __pycache__/

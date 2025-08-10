@@ -273,8 +273,8 @@ def render_auth_flow():
                         ok, msg = enhanced_create_user(new_username, new_password, first_name, last_name)
                         if ok:
                             st.success(msg + " Please log in now.")
-                            st.session_state["page"] = "login"
-                            st.rerun()
+                            # st.session_state["page"] = "login"
+                            # st.rerun()
                         else: 
                             print(msg)
         

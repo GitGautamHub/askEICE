@@ -291,7 +291,7 @@ def load_chat(chat_path):
             st.session_state.rag_chain = get_rag_chain(vectorstore)
             
             st.session_state.page = "chat"
-            st.session_state.current_chat_title = get_chat_title(st.session_state.messages, os.path.basename(chat_path))
+            # st.session_state.current_chat_title = get_chat_title(st.session_state.messages, os.path.basename(chat_path))
             st.rerun()
         else:
             # If ChromaDB directory is missing, give a warning
