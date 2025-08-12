@@ -1,5 +1,6 @@
 import streamlit as st
 from utils.auth import rename_chat
+import uuid
 
 # --- Custom CSS for a clean and modern look ---
 st.markdown("""
@@ -80,7 +81,9 @@ def render_chat_page():
     with col1:
         st.markdown(f'<h1 class="title-text">{st.session_state.get("current_chat_title", "Ask Anything")}</h1>', unsafe_allow_html=True)
     with col2:
-        if st.button("✏️", key="rename_button"):
+        if st.button("✏️", key=f"rename_button_{st.session_state.current_chat_file}_{uuid.uuid4()}"):
+
+            
             st.session_state.rename_mode = not st.session_state.get("rename_mode", False)
 
     # If rename mode is active, show the input field

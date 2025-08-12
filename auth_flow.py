@@ -222,39 +222,50 @@ def render_auth_flow():
                 username = st.text_input("Email", key="login_username", placeholder="Enter your email")
                 password = st.text_input("Password", type="password", key="login_password", placeholder="Enter your password")
                 submit_button = st.form_submit_button(label='Login', use_container_width=True)
-                
+
                 if submit_button:
                     if not username or not password:
                         st.warning(" Please fill in both fields.")
                     else:
-                        ok, msg = authenticate_user(username, password)
+                        ok, result = authenticate_user(username, password)
                         if ok:
+                            # result is role from auth.py
                             st.session_state["user"] = username
+                            st.session_state["role"] = result
                             st.session_state["page"] = "upload"
-                            # st.success(msg)
-                            # time.sleep(1)
                             st.rerun()
                         else:
-                            print(msg)
-                            # st.error(msg)
+                            st.error(result)
         
+
+
         with signup_tab:
             st.subheader("Create a new account")
             with st.form(key='signup_form'):
                 col_name1, col_name2 = st.columns(2)
-                with col_name1: first_name = st.text_input("First Name *", key="signup_first_name", placeholder="Enter your first name")
-                with col_name2: last_name = st.text_input("Last Name (Optional)", key="signup_last_name", placeholder="Enter your last name")
+                with col_name1:
+                    first_name = st.text_input("First Name *", key="signup_first_name", placeholder="Enter your first name")
+                with col_name2:
+                    last_name = st.text_input("Last Name (Optional)", key="signup_last_name", placeholder="Enter your last name")
+
                 new_username = st.text_input("Email Address *", key="signup_username", placeholder="Enter your email (e.g., user@gmail.com)")
-                
-                if new_username and not is_valid_email(new_username): st.error(" Please enter a valid email address (e.g., user@gmail.com)")
-                elif new_username and is_valid_email(new_username): st.success(" Valid email format")
-                
+
+                # NEW: Role dropdown
+                role = st.selectbox("Account Role *", ["user", "admin"], key="signup_role")
+
+                if new_username and not is_valid_email(new_username):
+                    st.error(" Please enter a valid email address (e.g., user@gmail.com)")
+                elif new_username and is_valid_email(new_username):
+                    st.success(" Valid email format")
+
                 new_password = st.text_input("Password *", type="password", key="signup_password", placeholder="Create a strong password")
                 confirm_password = st.text_input("Confirm Password *", type="password", key="confirm_password", placeholder="Re-enter your password")
-                
-                if new_password and confirm_password and new_password != confirm_password: st.error(" Passwords do not match")
-                elif new_password and confirm_password: st.success(" Passwords match")
-                
+
+                if new_password and confirm_password and        new_password != confirm_password:
+                    st.error(" Passwords do not match")
+                elif new_password and confirm_password:
+                    st.success(" Passwords match")
+
                 if new_password:
                     strength_score = get_password_strength_score(new_password)
                     strength_labels = ["Very Weak", "Weak", "Medium", "Strong", "Very Strong", "Excellent"]
@@ -262,21 +273,24 @@ def render_auth_flow():
                     st.markdown(f"<div style='margin-bottom:8px;'>Password Strength: <b style='color:{strength_colors[strength_score]}'>{strength_labels[strength_score]}</b></div>", unsafe_allow_html=True)
                     st.progress(strength_score/5)
                     st.markdown("<small>Password must be at least 8 characters, include uppercase, lowercase, digit, and special character.</small>", unsafe_allow_html=True)
-                
+
                 submit_button = st.form_submit_button(label="Create Account", use_container_width=True)
                 if submit_button:
-                    if not new_username or not new_password or not first_name or not confirm_password: st.warning(" Please fill in all required fields (marked with *).")
-                    elif not is_valid_email(new_username): st.error(" Please enter a valid email address")
-                    elif new_password != confirm_password: st.error(" Passwords do not match")
-                    elif get_password_strength_score(new_password) < 3: st.error(" Password is too weak. Please choose a stronger password.")
+                    if not new_username or not new_password or not first_name or not confirm_password or not role:
+                        st.warning(" Please fill in all required fields (marked with *).")
+                    elif not is_valid_email(new_username):
+                        st.error(" Please enter a valid email address")
+                    elif new_password != confirm_password:
+                        st.error(" Passwords do not match")
+                    elif get_password_strength_score(new_password) < 3:
+                        st.error(" Password is too weak. Please choose a stronger password.")
                     else:
-                        ok, msg = enhanced_create_user(new_username, new_password, first_name, last_name)
+                        ok, msg = create_user(new_username, new_password, role=role)  # Pass role
                         if ok:
                             st.success(msg + " Please log in now.")
-                            # st.session_state["page"] = "login"
-                            # st.rerun()
-                        else: 
-                            print(msg)
+                        else:
+                            st.error(msg)
+
         
         with forgot_tab:
             st.subheader("Reset Your Password")

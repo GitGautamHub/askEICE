@@ -15,7 +15,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s"
 )
-from spellchecker import SpellChecker
+from spellchecker import SpellChecker 
 
 global_doctr_model = None
 import fitz 

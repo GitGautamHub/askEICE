@@ -1,9 +1,8 @@
-# utils/file_processing.py
+
 
 import os
 import shutil
 import tempfile
-import comtypes.client
 from PyPDF2 import PdfReader
 from docx import Document
 from PIL import Image
@@ -13,6 +12,11 @@ import subprocess
 from pathlib import Path
 
 from config import SUPPORTED_FILE_TYPES, MAX_FILE_SIZE_MB, MAX_PAGES, UPLOAD_FOLDER
+
+# Conditional import for comtypes (Windows only)
+if platform.system() == "Windows":
+    import comtypes.client
+
 
 def get_file_extension(file):
     return os.path.splitext(file.name)[1].lower()
@@ -36,7 +40,6 @@ def is_valid_file(file):
                 return False, f"Failed to read PDF: {str(e)}"
         elif ext in [".doc", ".docx"]:
             try:
-                # Need to read from a temporary path for pydocx to handle docx properly
                 with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
                     tmp.write(file.read())
                     file.seek(0)
@@ -64,11 +67,7 @@ def is_scanned_pdf(filepath):
     except Exception:
         return True
 
-
 def copy_file(source_path, destination_path):
-    """
-    Copies a file from source_path to destination_path.
-    """
     try:
         with open(source_path, 'rb') as src_file:
             with open(destination_path, 'wb') as dest_file:
@@ -157,3 +156,4 @@ def convert_to_pdf(uploaded_file_obj, ext, user_upload_dir):
         if os.path.exists(pdf_file_path):
             os.remove(pdf_file_path)
         return False, f"File processing failed: {str(e)}"
+

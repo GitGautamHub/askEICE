@@ -17,7 +17,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(CHROMA_DB_DIRECTORY, exist_ok=True)
 os.makedirs(CHATS_DIR, exist_ok=True)
 
-poppler_bin_path = r"C:\Users\Gautam kumar\Downloads\Release-24.08.0-0\poppler-24.08.0\Library\bin"
+poppler_bin_path = r"/opt/homebrew/bin/pdftoppm"
 
 # --- API Keys ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -31,22 +31,22 @@ MAX_PAGES = 150
 # --- Database Configuration ---
 
 # akshit
-# DB_CONFIG = {
-#     "dbname": "postgres",
-#     "user": "postgres.tmzlvigxuqfzierxscgt",
-#     "password": "abcd1234",
-#     "host": "aws-0-ap-southeast-1.pooler.supabase.com",  # or your database host
-#     "port": 5432
-# }
-
-# gautam
 DB_CONFIG = {
-    "user":"postgres.pmdqypsgwtgxpgolpuqm",
-    "password":"db1234",
-    "host":"aws-0-ap-south-1.pooler.supabase.com",
-    "port":"6543",
-    "dbname":"postgres"
+    "dbname": "postgres",
+    "user": "postgres.tmzlvigxuqfzierxscgt",
+    "password": "abcd1234",
+    "host": "aws-0-ap-southeast-1.pooler.supabase.com",  # or your database host
+    "port": 5432
 }
+
+# # gautam
+# DB_CONFIG = {
+#     "user":"postgres.pmdqypsgwtgxpgolpuqm",
+#     "password":"db1234",
+#     "host":"aws-0-ap-south-1.pooler.supabase.com",
+#     "port":"6543",
+#     "dbname":"postgres"
+# }
 
 EMAIL_CONFIG = {
     'email': 'gautamk8760@gmail.com', 

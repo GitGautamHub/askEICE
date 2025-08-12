@@ -12,15 +12,16 @@ def render_upload_page():
     st.markdown("Please upload documents (PDF, DOCX, JPG, PNG) to create a knowledge base.")
 
     uploaded_files = st.file_uploader(
-        label="Choose your files",
-        type=[f.strip('.') for f in SUPPORTED_FILE_TYPES],
-        accept_multiple_files=True,
-        key="file_uploader",
-        help=f"Supported file types: {', '.join(SUPPORTED_FILE_TYPES)}\n"
-             f"Upload limit: Up to {MAX_FILES} files at a time\n"
-             f"File size limit: {MAX_FILE_SIZE_MB} MB per file\n"
-             f"Document length limit: Maximum {MAX_PAGES} pages per document",
-    )
+    label="Choose your files",
+    type=["pdf", "docx", "png", "jpg"],
+    accept_multiple_files=True,
+    key=f"file_uploader_{st.session_state.get('user', 'guest')}",  # ✅ unique key
+    help=(
+        "Supported formats: PDF, DOCX, PNG, JPG\n"
+        f"Document length limit: Maximum {MAX_PAGES} pages per document"
+    ),
+)
+
 
     if uploaded_files:
         if len(uploaded_files) > MAX_FILES:
