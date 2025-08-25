@@ -12,7 +12,7 @@
   - **DocTR (Deep Learning OCR)**: For high-quality Optical Character Recognition on scanned PDFs and images, leveraging **GPU acceleration** for efficiency.
 - **Scalable RAG Pipeline**: Implements a robust Retrieval-Augmented Generation (RAG) architecture to handle large volumes of data:
   - **Text Chunking**: Breaks down documents into manageable chunks to optimize LLM performance and manage context windows.
-  - **Open-Source Embeddings**: Uses Sentence Transformers (`all-mpnet-base-v2`) for generating high-quality vector embeddings, ensuring semantic search without a dependency on paid embedding APIs.
+  - **Open-Source Embeddings**: Uses Sentence Transformers (`BAAI/bge-base-en-v1.5`) for generating high-quality vector embeddings, ensuring semantic search without a dependency on paid embedding APIs.
   - **Persistent Vector Store**: Utilizes **ChromaDB**, an open-source and persistent vector database, to store and quickly retrieve relevant document chunks. This ensures your knowledge base is saved between sessions.
 - **Interactive Streamlit Interface**: A user-friendly and modern web application built with Streamlit, featuring:
   - A simple upload page for documents and a choice of extraction method.

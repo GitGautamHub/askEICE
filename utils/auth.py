@@ -11,9 +11,12 @@ import shutil
 import time
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from utils.rag_pipeline import get_rag_chain
-
-
+from utils.rag_pipeline import get_rag_chain, get_or_create_vectorstore
+from config import ORGANIZATIONS, AVAILABLE_ROLES, AVAILABLE_ORGANIZATIONS
+# from auth_flow import is_valid_email, check_password_strength
+from utils.validation import is_valid_email, check_password_strength
+from auth_helpers import user_exists
+import bcrypt
 # Constants for chat history
 MAX_CHAT_HISTORY = 10
 
@@ -24,41 +27,22 @@ def get_pg_connection():
 
 # --- Init DB ---
 def init_db():
-    with get_pg_connection() as conn:
-        with conn.cursor() as cur:
-            # Create table if it doesn't exist
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    username TEXT PRIMARY KEY,
-                    password BYTEA NOT NULL
-                )
-            """)
-            conn.commit()  # Commit right after table creation
-
-        # Try ALTERs in separate cursor blocks with rollback safety
-        with conn.cursor() as cur:
-            try:
-                cur.execute("ALTER TABLE users ADD COLUMN first_name TEXT")
-                conn.commit()
-            except psycopg2.errors.DuplicateColumn:
-                conn.rollback()  # Rollback only this failed ALTER
-            except Exception as e:
-                conn.rollback()
-                print(f"Error adding 'first_name': {e}")
-
-        with conn.cursor() as cur:
-            try:
-                cur.execute("ALTER TABLE users ADD COLUMN last_name TEXT DEFAULT ''")
-                conn.commit()
-            except psycopg2.errors.DuplicateColumn:
-                conn.rollback()
-            except Exception as e:
-                conn.rollback()
-                print(f"Error adding 'last_name': {e}")
-        
-        # Create OTP table for password reset
-        with conn.cursor() as cur:
-            try:
+    """Initializes the database schema for users and OTPs."""
+    try:
+        with get_pg_connection() as conn:
+            with conn.cursor() as cur:
+                # Create the users table with all required columns
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        username TEXT PRIMARY KEY,
+                        password BYTEA NOT NULL,
+                        first_name TEXT,
+                        last_name TEXT,
+                        role TEXT,
+                        organization TEXT
+                    )
+                """)
+                # Create the password reset OTPs table
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS password_reset_otps (
                         username TEXT PRIMARY KEY,
@@ -68,18 +52,20 @@ def init_db():
                     )
                 """)
                 conn.commit()
-            except Exception as e:
-                conn.rollback()
-                print(f"Error creating OTP table: {e}") 
+    except Exception as e:
+        print(f"Error during database initialization: {e}")
 
 # --- Create User ---
-def create_user(username, password):
+def create_user(username, password, first_name, last_name, role, organization):
     username = username.strip().lower()
     hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
     try:
         with get_pg_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_pw))
+                cur.execute(
+                    "INSERT INTO users (username, password, first_name, last_name, role, organization) VALUES (%s, %s, %s, %s, %s, %s)",
+                    (username, hashed_pw, first_name, last_name, role, organization)
+                )
                 conn.commit()
         return True, "Account created successfully!"
     except psycopg2.IntegrityError:
@@ -106,55 +92,110 @@ def authenticate_user(username, password):
 
 # --- Chat History Functions ---
 def get_chat_title(chat_data, filename):
-    if chat_data and len(chat_data) > 0 and "content" in chat_data[0]:
-        first_message = chat_data[0]["content"]
-        if first_message and len(first_message) > 40:
+    """
+    Generates a user-friendly title from the first user message, or a fallback.
+    It first checks for a saved 'title' key in the chat data.
+    """
+    if isinstance(chat_data, dict) and chat_data.get('title') and chat_data['title'] != "Untitled Chat":
+        return chat_data['title']
+
+    user_messages = [msg for msg in chat_data.get('messages', []) if msg.get('role') == 'user']
+    if user_messages and user_messages[0].get('content'):
+        first_message = user_messages[0]["content"]
+        if len(first_message) > 40:
             return first_message[:40] + "..."
         return first_message
+
     return filename.replace('.json', '').replace('chat_', 'Chat ')
 
+
+def get_users_by_organization(organization_name):
+    try:
+        with get_pg_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT username FROM users WHERE organization = %s", (organization_name,))
+                return [row[0] for row in cur.fetchall()]
+    except Exception as e:
+        print(f"Error fetching users by organization: {e}")
+        return []
+
 def load_user_chats(username):
+    """Loads chat history for a specific user, ensuring privacy."""
+    
+    # 1. Fetch user's info to get their organization.
+    user_info = get_user_info(username)
+    if not user_info:
+        return []
+
+    # 2. Get the directory specific to the logged-in user.
+    # The privacy and separation of chats is handled here.
     user_chat_dir = os.path.join(CHATS_DIR, username)
     if not os.path.exists(user_chat_dir):
         os.makedirs(user_chat_dir)
         return []
     
+    # 3. List all chat files in the user's directory.
     chat_files = sorted([f for f in os.listdir(user_chat_dir) if f.endswith('.json')], reverse=True)
     chats = []
+    
+    # 4. Iterate through each chat file and load its data.
     for file in chat_files:
         try:
             file_path = os.path.join(user_chat_dir, file)
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             
-            # user_messages = [msg for msg in data.get('messages', []) if msg.get('role') == 'user']
+            # --- FIX STARTS HERE ---
+            # Correctly get the title by prioritizing the saved title from the file.
             title = data.get('title')
-            title = get_chat_title(data, file)
-            
+            if not title:
+                # Fallback: if no title is saved, generate one from the first message.
+                title = get_chat_title(data, file)
+            # --- FIX ENDS HERE ---
+
             chats.append({
                 "file": file, 
                 "title": title,
                 "path": file_path
             })
         except Exception as e:
+            # Skip any corrupted or unreadable chat files.
             continue
+            
     return chats
 
+def enhanced_create_user(username, password, first_name, last_name, role, organization):
+    username = username.strip().lower()
+    
+    if not is_valid_email(username):
+        return False, "Please enter a valid email address."
+    
+    # Check if the email domain is from a recognized organization
+    domain = username.split('@')[1]
+    if domain not in ORGANIZATIONS[organization]["domains"]:
+        return False, f"The email domain '{domain}' does not match the selected organization."
+
+    # Baaki ka validation same rahega
+    if not is_valid_email(username): return False, "Please enter a valid email address."
+    if not first_name: return False, "First name is required"
+    is_strong, strength_msg = check_password_strength(password)
+    if not is_strong: return False, strength_msg
+
+    return create_user(username, password, first_name, last_name, role, organization)
+
 def get_user_info(username):
-    """Fetches user's first name and email from the database."""
     try:
         with get_pg_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT first_name, username FROM users WHERE username = %s", (username,))
+                cur.execute("SELECT first_name, username, role, organization FROM users WHERE username = %s", (username,))
                 row = cur.fetchone()
                 if row:
-                    first_name, email = row
-                    return first_name, email
+                    return {"first_name": row[0], "email": row[1], "role": row[2], "organization": row[3]}
                 else:
-                    return None, None
+                    return None
     except Exception as e:
         print(f"Error fetching user info: {e}")
-        return None, None
+        return None
 
 def save_current_chat():
     """Saves the current chat session to a JSON file, including the title."""
@@ -264,6 +305,9 @@ def rename_chat(chat_path, new_title):
         return False, f"Error renaming chat: {e}"
 
 def load_chat(chat_path):
+    if st.session_state.get('page') == 'upload':
+        st.session_state.page = 'chat'
+        
     if (st.session_state.get('current_chat_file') and
         st.session_state.get('messages') and
         len(st.session_state.messages) > 1):
@@ -284,7 +328,7 @@ def load_chat(chat_path):
         # Check if the ChromaDB directory still exists
         if os.path.exists(st.session_state.chroma_dir):
             # Rebuilding the vector store from the saved directory is the key!
-            embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+            embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/BAAI/bge-base-en-v1.5")
             vectorstore = Chroma(persist_directory=st.session_state.chroma_dir, embedding_function=embeddings_model)
             
             # Rebuilding the RAG chain

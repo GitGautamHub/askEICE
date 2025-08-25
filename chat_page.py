@@ -1,5 +1,9 @@
 import streamlit as st
 from utils.auth import rename_chat
+import logging
+logging.basicConfig(level=logging.INFO)
+import re
+from utils.rag_pipeline import get_rag_chain, get_or_create_vectorstore
 
 # --- Custom CSS for a clean and modern look ---
 st.markdown("""
@@ -73,7 +77,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
 def render_chat_page():
     # --- Title Section with Rename Feature ---
     col1, col2 = st.columns([0.85, 0.15])
@@ -82,6 +85,7 @@ def render_chat_page():
     with col2:
         if st.button("✏️", key="rename_button"):
             st.session_state.rename_mode = not st.session_state.get("rename_mode", False)
+        
 
     # If rename mode is active, show the input field
     if st.session_state.get("rename_mode", False):
@@ -116,14 +120,41 @@ def render_chat_page():
                             f"Human: {msg['content']}" if msg['role'] == 'user' else f"AI: {msg['content']}"
                             for msg in chat_history
                         ])
+                        logging.info(f"Formatted Chat History: {formatted_history}")
                         
                         response = st.session_state.rag_chain.invoke(
-                            user_prompt, chat_history=formatted_history
+                            f"{user_prompt}, {formatted_history}",
                         )
+                        # response = st.session_state.rag_chain.invoke(
+                        #     {
+                        #         "query": user_prompt,
+                        #         "chat_history": formatted_history
+                        #     }
+                        # )
+                        
 
                     # Display the assistant's response
-                    st.markdown(response)
-                    st.session_state.messages.append({"role": "assistant", "content": response})
+                    # st.markdown(response)
+                    # st.session_state.messages.append({"role": "assistant", "content": response})
+                    if isinstance(response, dict) and 'answer' in response:
+                        answer_text = response['answer']
+                        sources = response.get('sources', [])
+                        
+                        # Display sources first
+                        if sources:
+                            unique_sources = sorted(list(set(sources)))
+                            st.markdown("---")
+                            st.markdown("#### References")
+                            for source in unique_sources:
+                                st.markdown(f"- **{source}**")
+                        
+                        # Display the final answer
+                        st.markdown(answer_text)
+                        
+                        st.session_state.messages.append({"role": "assistant", "content": answer_text})
+                    else:
+                        st.error("Received an unexpected response format from the RAG chain.")
+                        st.session_state.messages.append({"role": "assistant", "content": "An error occurred."})
                 except Exception as e:
                     st.error(f"An error occurred during interaction: {e}")
                     st.session_state.messages.append({"role": "assistant", "content": f"An error occurred: {e}"})
